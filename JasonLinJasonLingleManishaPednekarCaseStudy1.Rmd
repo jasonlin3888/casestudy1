@@ -1,0 +1,158 @@
+---
+title: "Market Analysis for Linsane Brewery- Case Study 1"
+author: "Jason Lin, Jason Lingle, Manisha Pednekar"
+date: "February 26, 2018"
+output: 
+     html_document:
+       keep_md: true
+---
+#Introduction             
+This is a market analysis for the startup company Linsane Breweries. The company is interested in understanding the current geographic market for beer, and also the different styles by different breweries across the nation including District of Columbia.The main factors analyzed are alcohol by volume (ABV), international bitterness unit (IBU), and geography.The following report will show the ABV and IBU by state, and also high level plots of the relationship between ABV and IBU. 
+
+
+
+
+#Data Cleaning Proccess              
+
+This is the prelimnary cleaning of the beer names and ridding of duplicates of beers. The criteria for determining duplicates is if the beer name and ounces are the same. Also the cleaning of the beer names for special characters for ease of reading. Majority of incomplete beer names are renamed to help with ease of reading. The same process is done for the renaming of breweries. 
+
+```{r datacleaning}
+setwd("C:/Users/sams/Desktop/SMU/January 2018/Doing Data Science/CaseStudy1")
+
+raw_beers <- read.csv("Beers.csv", sep = ",")
+colnames(raw_beers) <- c("Beer_Name", "Beer_id", "ABV", "IBU", "Brewery_id", "Style", "Ounces")
+beers<-raw_beers[!duplicated(raw_beers[,c("Beer_Name","Ounces")]),]
+
+
+breweries <- read.csv("Breweries.csv", sep = ",")
+colnames(breweries) <- c("Brewery_id", "Brewery_Name", "City", "State")
+
+mergedBeerData <- merge(beers, breweries, by = "Brewery_id", all.x = TRUE)
+
+library(dplyr)
+
+mergedBeerData$Beer_Name <- gsub("Ã¤r", "ar", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("Ã¶", "o", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("â€™", "'", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("Ã¤u", "au", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("Ã©", "l", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("Ã¨", "e", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("Â°", "°", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("â„¢", "", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("â€˜", "", mergedBeerData$Beer_Name)
+
+mergedBeerData$Style <- gsub("Ã¤r", "ar", mergedBeerData$Style)
+mergedBeerData$Style <- gsub("Ã¶", "o", mergedBeerData$Style)
+mergedBeerData$Style <- gsub("â€™", "'", mergedBeerData$Style)
+mergedBeerData$Style <- gsub("Ã¤u", "au", mergedBeerData$Style)
+mergedBeerData$Style <- gsub("Ã©", "l", mergedBeerData$Style)
+mergedBeerData$Style <- gsub("Ã¨", "e", mergedBeerData$Style)
+mergedBeerData$Style <- gsub("Â°", "°", mergedBeerData$Style)
+mergedBeerData$Style <- gsub("â„¢", "", mergedBeerData$Style)
+mergedBeerData$Style <- gsub("â€˜", "", mergedBeerData$Style)
+
+mergedBeerData$Brewery_Name <- gsub("Ã¤r", "ar", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("Ã¶", "o", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("â€™", "'", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("Ã¤u", "au", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("Ã©", "l", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("Ã¨", "e", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("Â°", "°", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("â„¢", "", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("â€˜", "", mergedBeerData$Brewery_Name)
+
+mergedBeerData$City <- gsub("St Paul", "St. Paul", mergedBeerData$City)
+mergedBeerData$Beer_Name <- gsub("Uncle Billy's Brewery and Smokeh...", "Uncle Billy's Brewery and Smokehouse", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("Red Shedman Farm Brewery and Hop...", "Red Shedman Farm Brewery and Hop Yard", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("Center of the Universe Brewing C...", "Center of the Universe Brewing Company", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("Southern Prohibition Brewing Com...", "Southern Prohibition Brewing Company", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("New Orleans Lager & Ale Brewing ...", "New Orleans Lager & Ale Brewing Company", mergedBeerData$Beer_Name)
+mergedBeerData$Beer_Name <- gsub("(2012) (2012)", "(2012)", mergedBeerData$Beer_Name)
+
+mergedBeerData$Brewery_Name <- gsub("Krebs Brewing Company \\(Pete's Pl...", "Krebs Brewing Company (Pete's Place)", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("Moat Mountain Smoke House & Brew...", "Moat Mountain Smoke House & Brewing Company", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("Oskar Blues Brewery \\(North Carol...", "Oskar Blues Brewery (North Carolina)", mergedBeerData$Brewery_Name)
+mergedBeerData$Brewery_Name <- gsub("Jack's Hard Cider \\(Hauser Estate...", "Jack's Hard Cider Hauser Estate", mergedBeerData$Brewery_Name)
+```           
+
+#1. How many breweries in each state?    
+The number of breweries range from 1 to 47. Where there are many states, such as DC, South Dakota, and west Virginia, that one brewery and Colorado having 47 breweries.Below is the table of breweries by state.  
+
+```{r state_brewereis}
+table(breweries$State)
+```          
+
+#2. Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.                   
+The merging code can be found in the section "Data Cleaning". The merge was done on beers.csv and breweries.csv based on Brewery_id. It was a one sided merge using beer.csv as the base. The following code is the check for the validity of the merge.
+
+```{r merging}
+head(mergedBeerData)
+tail(mergedBeerData)
+```          
+
+#3. Report the number of NA's in Each Column.            
+This is also another check to see if there is any problems with the merge. Also it is to see whether there is any missing data. Fromm the analysis, we see that ABV has 61 missing and IBU has 991 missing for beers. The missing IBU can maybe explained because it can be a measure for hops in the beer, and that is proprietary data. The missing ABV is maybe breweries did not provide this data. 
+```{r numberofNa}
+matrix_NA <- is.na(mergedBeerData)
+class(matrix_NA)
+# The following line of code gives the number of NAs present in each column of the mergedBeerData
+colSums(matrix_NA)
+```          
+
+#4. Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.          
+When looking at the graphs for median ABV by state, we see that Utah comparatively has the lowest alcohol content at around 0.04 or 4%. DC has the highest alcohol content at 0.0625 or 6.25%. When looking at the graphs for IBU, South Dakota did not record any IBU values so there is no information on this state. The lowest IBU content is 17 for the state Wisconsin and the highest IBU is 61 for the state Maine. We have to keep in mind the range of IBU is from 0 to 100, where 100 is the most bitter.  
+```{r barplots}
+medianabv<-mergedBeerData %>% 
+     group_by(State) %>% 
+     summarize(medABVPerState = median(ABV, na.rm = TRUE))
+medianIBU<-mergedBeerData %>% 
+     group_by(State) %>% 
+     summarize(medIBUPerState = median(IBU, na.rm = TRUE))
+mergedmedians <- merge(medianabv,medianIBU,by="State",all=TRUE)
+mergedmedians
+
+library(ggplot2)
+
+ggplot(mergedmedians,aes(State,medABVPerState))+
+geom_bar(stat="identity",fill="red")+
+theme_minimal()+ggtitle("Median ABV (Alcohol by Volume) Per State")+theme(plot.title = element_text(hjust = 0.5,size=22), axis.text.x=element_text(angle=90,hjust=0.95,vjust=0.2,size=8))+coord_cartesian(ylim = c(0.04,0.065))
+
+ggplot(mergedmedians,aes(State,medIBUPerState))+
+    geom_bar(stat="identity",fill="blue")+
+theme_minimal()+ggtitle("Median IBU (International Bitterness Unit) Per State")+theme(plot.title = element_text(hjust = 0.5,size=22),axis.text.x=element_text(angle=90,hjust=0.95,vjust=0.2,size=8))
+```          
+
+#5. Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?            
+The analysis is done based on median values calculated by State. This is more of central tendency measurement, so it would not be influenced by outliers. When looking at the graphs for median ABV by state, we see that DC has the highest alcohol content at 0.0625 or 6.25%. When looking at the graphs for IBU, the highest IBU is 61 for the state Maine. We have to keep in mind the range of IBU is from 0 to 100,
+```{r maxABVIBU}
+maxABVstate<-mergedmedians[which.max(mergedmedians$medABVPerState),]
+maxABVstate
+maxIBUstate<-mergedmedians[which.max(mergedmedians$medIBUPerState),]
+maxIBUstate
+```         
+
+#6. Summary statistics for the ABV variable.            
+When looking at all ABV for beers, we calculated the 5 number summary. The minimum is 0.001 or 0.01% and the maximum is 0.128 or 12.8%. Giving a range of 12.7%.For 25% of the data, the range of ABV is betewen 0.01% to 5%. For 50% of the data, the range of ABV is 0.01% to 5.6%. For 75% of the data, the range of ABV is between 0.01% to 6.8%. The average ABV content is 5.98%.   
+```{r summarystatsabv}
+summary(mergedBeerData$ABV)
+```            
+
+#7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.You are welcome to use the ggplot2 library for graphs. Please ignore missing values in your analysis. Make your best judgment of a relationship and EXPLAIN your answer.  
+
+When looking at the scatterplot of ABV vs. IBU, we see that the points are clustered more in a linear upward trend. This may signify a postive linear correlation between ABV annd IBU. A Pearson correlation test is done to see if there is a statistical significant relationship. The pvalue for the test is <0.0001. Therefore, we may be able to say that about 43% of the variation is IBU is explained by ABV where the correlation between the two variable is 0.66. 
+
+```{r scatterplot}
+ggplot(mergedBeerData, aes(ABV, IBU)) +geom_point(color="blue") +
+     theme_minimal()+ggtitle("Scatterplot of ABV vs IBU")+ theme(plot.title = element_text(hjust = 0.5,size=22))+labs(x="ABV (Alcohol by Volume)",y="IBU (International Bitterness Unit)")
+cor.test(mergedBeerData$ABV,mergedBeerData$IBU)
+```                       
+
+#Conclusion            
+After analyzing the data, we see that there is high number of breweries that are located in Colorado and California area. The reason behind this we do not know, however it is possible the water quality maybe better there or a high concentration of people that love beer in that area. When looking at the overall alcohol content, the range is between 5.6% to 6.8% being near to the middle 50% of beers analyzed. Also the mean and median are close (5.9% and 5.6% respectively).The measure for IBU for this data may not be reliable just because it is proprietary. From the beers that do provide this data, we see that the range of bitterness is between 17 and 61. When looking at the scatterplot and the statistical analysis for linear correlation, we some evidence that IBU and ABV having a positive linear relationship.The bitterness of beer may come from the amount of alcohol or visa versa.
+For further analysis, we can analyze which style of beers, and also the profile (ABV and IBU) that are popular amongst customers. Further analysis should be on where to locate breweries to maximize profit. 
+
+
+
+
+
+
